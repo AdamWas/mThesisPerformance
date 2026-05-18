@@ -1,0 +1,29 @@
+<Solution>
+  <Folder Name="/Benchmarks/">
+    <Project Path="Benchmarks/Performance.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/Graftcode/" />
+  <Folder Name="/Graftcode/Client/">
+    <Project Path="Graftcode/Client/Performance.Graftcode.Client.csproj" />
+  </Folder>
+  <Folder Name="/Graftcode/Server/">
+    <Project Path="Graftcode/Server/Performance.Graftcode.Server.csproj" />
+  </Folder>
+  <Folder Name="/gRPC/" />
+  <Folder Name="/gRPC/Client/">
+    <Project Path="gRPC/Client/Performance.Grpc.Client.csproj" />
+  </Folder>
+  <Folder Name="/gRPC/Server/">
+    <Project Path="gRPC/Server/Performance.Grpc.Server.csproj" />
+  </Folder>
+  <Folder Name="/REST/" />
+  <Folder Name="/REST/Client/">
+    <Project Path="REST/Client/Performance.Rest.Client.csproj" />
+  </Folder>
+  <Folder Name="/REST/Server/">
+    <Project Path="REST/Server/Performance.Rest.Server.csproj" />
+  </Folder>
+  <Folder Name="/Shared/">
+    <Project Path="Shared/Performance.Shared.csproj" />
+  </Folder>
+</Solution>
