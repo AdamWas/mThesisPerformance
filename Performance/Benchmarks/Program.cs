@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Grpc.Net.Client;
+using Performance.Graftcode.Client;
 using Performance.Grpc;
 using Performance.Shared;
 
@@ -62,6 +63,13 @@ public class CommunicationBenchmarks
     }
 
     [Benchmark]
+    public int GraftSmall()
+    {
+        var payload = GraftClient.GetSmall();
+        return payload.Value;
+    }
+
+    [Benchmark]
     public async Task<int> RestLarge()
     {
         var payload = await restClient.GetFromJsonAsync<LargePayload>($"/large?sizeMb={SizeMb}");
@@ -72,6 +80,13 @@ public class CommunicationBenchmarks
     public async Task<int> GrpcLarge()
     {
         var payload = await grpcClient.GetLargeAsync(new LargeRequest { SizeMb = SizeMb });
+        return payload.SizeBytes;
+    }
+
+    [Benchmark]
+    public int GraftLarge()
+    {
+        var payload = GraftClient.GetLarge(SizeMb);
         return payload.SizeBytes;
     }
 }

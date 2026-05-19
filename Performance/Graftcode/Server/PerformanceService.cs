@@ -8,11 +8,13 @@ public sealed class PerformanceService
 
     public SmallPayload GetSmall()
     {
-        return dataService.GetSmall();
+        var payload = dataService.GetSmall();
+        return new SmallPayload(payload.Value);
     }
 
     public LargePayload GetLarge(int sizeMb = 5)
     {
-        return dataService.GetLarge(sizeMb);
+        var payload = dataService.GetLarge(sizeMb);
+        return new LargePayload(payload.Payload, payload.SizeBytes);
     }
 }

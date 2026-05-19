@@ -65,3 +65,9 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# Local repository/test artifacts
+Performance/.git-local/
+Performance/test-run-*.log
+Performance/BenchmarkResults/**/*.log
+Performance/BenchmarkResults/**/results/

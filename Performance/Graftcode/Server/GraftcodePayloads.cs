@@ -1,4 +1,4 @@
-namespace Performance.Shared;
+namespace Performance.Graftcode.Server;
 
 public class SmallPayload
 {
