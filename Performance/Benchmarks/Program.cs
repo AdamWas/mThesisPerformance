@@ -2,9 +2,9 @@ using System.Net.Http.Json;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Grpc.Net.Client;
-using Performance.Graftcode.Client;
 using Performance.Grpc;
 using Performance.Shared;
+using GraftServer = graft.nuget.Performance.Graftcode.Server;
 
 BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 
@@ -14,6 +14,7 @@ public class CommunicationBenchmarks
     private HttpClient restClient = null!;
     private GrpcChannel grpcChannel = null!;
     private PerformanceService.PerformanceServiceClient grpcClient = null!;
+    private GraftServer.PerformanceService graftClient = null!;
 
     [Params("http://localhost:5100")]
     public string RestBaseAddress { get; set; } = "http://localhost:5100";
@@ -39,6 +40,9 @@ public class CommunicationBenchmarks
         });
 
         grpcClient = new PerformanceService.PerformanceServiceClient(grpcChannel);
+
+        GraftServer.GraftConfig.Host = "ws://localhost/ws";
+        graftClient = new GraftServer.PerformanceService();
     }
 
     [GlobalCleanup]
@@ -65,7 +69,7 @@ public class CommunicationBenchmarks
     [Benchmark]
     public int GraftSmall()
     {
-        var payload = GraftClient.GetSmall();
+        var payload = graftClient.GetSmall();
         return payload.Value;
     }
 
@@ -86,7 +90,7 @@ public class CommunicationBenchmarks
     [Benchmark]
     public int GraftLarge()
     {
-        var payload = GraftClient.GetLarge(SizeMb);
+        var payload = graftClient.GetLarge(SizeMb);
         return payload.SizeBytes;
     }
 }
