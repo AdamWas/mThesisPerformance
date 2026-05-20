@@ -4,7 +4,7 @@ namespace Performance.Graftcode.Client;
 
 public static class GraftClient
 {
-    private const string Host = "ws://localhost/ws";
+    private const string Host = "ws://localhost:81/ws";
     private static readonly GraftServer.PerformanceService Service = CreateService();
 
     public static GraftServer.SmallPayload GetSmall()

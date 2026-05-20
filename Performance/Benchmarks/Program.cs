@@ -41,8 +41,7 @@ public class CommunicationBenchmarks
 
         grpcClient = new PerformanceService.PerformanceServiceClient(grpcChannel);
 
-        GraftServer.GraftConfig.Host = "ws://localhost/ws";
-        graftClient = new GraftServer.PerformanceService();
+        GraftServer.GraftConfig.Host = "ws://localhost:81/ws";
     }
 
     [GlobalCleanup]
@@ -69,7 +68,7 @@ public class CommunicationBenchmarks
     [Benchmark]
     public int GraftSmall()
     {
-        var payload = graftClient.GetSmall();
+        var payload = GetGraftClient().GetSmall();
         return payload.Value;
     }
 
@@ -90,7 +89,12 @@ public class CommunicationBenchmarks
     [Benchmark]
     public int GraftLarge()
     {
-        var payload = graftClient.GetLarge(SizeMb);
+        var payload = GetGraftClient().GetLarge(SizeMb);
         return payload.SizeBytes;
+    }
+
+    private GraftServer.PerformanceService GetGraftClient()
+    {
+        return graftClient ??= new GraftServer.PerformanceService();
     }
 }
