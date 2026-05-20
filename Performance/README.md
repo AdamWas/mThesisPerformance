@@ -1,50 +1,86 @@
 # Performance Study
 
-This directory contains an isolated performance study scaffold for three communication styles and a browser client:
+This directory contains a small performance playground for the same .NET business methods exposed through:
 
 - REST over HTTP + JSON
 - gRPC over HTTP/2 + Protocol Buffers
-- Graftcode with the same business-method shape
-- React frontend calling the .NET Graftcode service through the generated Graft package
+- Graftcode Gateway + generated Graft package
+- React browser client calling REST, gRPC-Web, and Graftcode
 
-The current implemented scenarios are:
+The implemented scenarios are:
 
-- `small`: returns a small object with an integer value from 1 to 100.
-- `large`: returns a payload with configurable size in MB, defaulting to `5`.
+- `small` - returns a small object with an integer value from 1 to 100.
+- `large` - returns a payload with configurable size in MB.
+
+## Prerequisites
+
+- Docker with Docker Compose
+- .NET SDK 10
+- Node.js and npm for the React client
 
 ## Projects
 
 - `Shared` - common payload records and business logic.
 - `REST/Server` - ASP.NET Core Minimal API on `http://localhost:5100`.
-- `REST/Client` - simple REST sanity client.
-- `gRPC/Server` - ASP.NET Core gRPC service on `http://localhost:5101`.
-- `gRPC/Client` - simple gRPC sanity client.
-- `Graftcode/Server` - .NET service class hosted through Graftcode Gateway.
-- `Graftcode/Client` - .NET sanity client using the generated Graft package.
-- `ReactGraftcode` - Vite/React browser client and benchmark for React -> .NET calls.
-- `Benchmarks` - BenchmarkDotNet client-side benchmarks for REST, gRPC, and Graftcode.
+- `gRPC/Server` - ASP.NET Core gRPC and gRPC-Web service on `http://localhost:5101`.
+- `Graftcode/Server` - .NET service hosted through Graftcode Gateway.
+- `Benchmarks` - BenchmarkDotNet client-side benchmark for REST, gRPC, and Graftcode.
+- `ReactGraftcode` - Vite/React browser client and benchmark for REST, gRPC-Web, and Graftcode.
 
-## Build
+## Start Backends
+
+Run all services from the repository root, where `docker-compose.yml` lives:
+
+```bash
+docker compose up --build
+```
+
+This starts:
+
+- REST server: `http://localhost:5100`
+- gRPC and gRPC-Web server: `http://localhost:5101`
+- Graftcode WebSocket endpoint: `ws://localhost:81/ws`
+- Graftcode Vision: `http://localhost:5004/GV`
+
+To start only one service:
+
+```bash
+docker compose up --build rest-server
+docker compose up --build grpc-server
+docker compose up --build graftcode-server
+```
+
+Stop everything with:
+
+```bash
+docker compose down
+```
+
+## Build .NET
+
+From the repository root:
 
 ```bash
 DOTNET_CLI_HOME=/tmp dotnet build Performance/Performance.slnx -c Release
 ```
 
-## Run Services
+## Run .NET Benchmark
 
-Run REST server:
-
-```bash
-DOTNET_CLI_HOME=/tmp dotnet run --project Performance/REST/Server/Performance.Rest.Server.csproj -c Release
-```
-
-Run gRPC server:
+Start the Docker services first:
 
 ```bash
-DOTNET_CLI_HOME=/tmp dotnet run --project Performance/gRPC/Server/Performance.Grpc.Server.csproj -c Release
+docker compose up --build
 ```
 
-## Sanity Clients
+Then run BenchmarkDotNet from another terminal:
+
+```bash
+DOTNET_CLI_HOME=/tmp dotnet run --project Performance/Benchmarks/Performance.Benchmarks.csproj -c Release -- --filter '*CommunicationBenchmarks*'
+```
+
+BenchmarkDotNet writes its generated reports under `Performance/Benchmarks/BenchmarkDotNet.Artifacts/` by default.
+
+## Optional Sanity Clients
 
 REST:
 
@@ -64,15 +100,15 @@ Graftcode:
 DOTNET_CLI_HOME=/tmp dotnet run --project Performance/Graftcode/Client/Performance.Graftcode.Client.csproj -c Release -- 5
 ```
 
-## React -> .NET Graftcode Client
+## Run React Client
 
-Start the Graftcode gateway first:
+Start the Docker services first:
 
 ```bash
-docker compose up --build graftcode-server
+docker compose up --build
 ```
 
-Install the generated Graft package and run the React client:
+Then install and start React from another terminal:
 
 ```bash
 cd Performance/ReactGraftcode
@@ -80,26 +116,34 @@ npm install
 npm run dev
 ```
 
-The React client defaults to:
+Open the Vite URL, usually:
 
-- REST: `http://localhost:5100`
-- gRPC-Web: `http://localhost:5101`
-- Graftcode: `ws://localhost:81/ws`
-
-Override them with `VITE_REST_BASE_URL`, `VITE_GRPC_BASE_URL`, or `VITE_GRAFTCODE_HOST` when needed:
-
-```bash
-VITE_REST_BASE_URL=http://localhost:5100 VITE_GRPC_BASE_URL=http://localhost:5101 VITE_GRAFTCODE_HOST=ws://localhost:81/ws npm run dev
+```text
+http://localhost:5173/
 ```
 
-The page includes a sample call and a browser-side benchmark for REST, gRPC-Web, and Graftcode. The large-payload cases read `Payload` in addition to `SizeBytes`, so the measurement forces the full payload through the React client.
+The React page has:
 
-## Benchmarks
+- `Call sample` - one sample call through REST, gRPC-Web, and Graftcode.
+- `Run benchmark` - browser-side timing for `GetSmall` and `GetLarge` through all three transports.
 
-Start the REST, gRPC, and Graftcode servers first, then run:
+## React Configuration
 
-```bash
-DOTNET_CLI_HOME=/tmp dotnet run --project Performance/Benchmarks/Performance.Benchmarks.csproj -c Release -- --filter '*CommunicationBenchmarks*'
+Create or edit:
+
+```text
+Performance/ReactGraftcode/.env.local
 ```
 
-The benchmark project uses BenchmarkDotNet warm-up and measurement phases. The `SizeMb` parameter is currently set to `5` in code and can be expanded into multiple values later.
+Example:
+
+```env
+VITE_GRAFTCODE_HOST=ws://localhost:81/ws
+VITE_GRAFTCODE_STATELESS=false
+VITE_REST_BASE_URL=http://localhost:5100
+VITE_GRPC_BASE_URL=http://localhost:5101
+```
+
+`VITE_GRAFTCODE_STATELESS` accepts values like `true`, `false`, `1`, `0`, `yes`, `no`.
+
+Restart `npm run dev` after changing `.env.local`.

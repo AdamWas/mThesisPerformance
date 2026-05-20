@@ -4,22 +4,39 @@ import {
 } from "@graft/nuget-performance.graftcode.server";
 
 const defaultGatewayHost = "ws://localhost:81/ws";
+const defaultStateless = false;
 
 let configuredHost: string | undefined;
+let configuredStateless: boolean | undefined;
 let service: PerformanceService | undefined;
 
 export function getGatewayHost() {
   return import.meta.env?.VITE_GRAFTCODE_HOST || defaultGatewayHost;
 }
 
-export function configureGraft(host = getGatewayHost()) {
-  if (configuredHost === host && service) {
+export function getGraftStateless() {
+  const value = import.meta.env?.VITE_GRAFTCODE_STATELESS;
+
+  if (value == null || value.trim() === "") {
+    return defaultStateless;
+  }
+
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
+export function configureGraft(
+  host = getGatewayHost(),
+  stateless = getGraftStateless()
+) {
+  if (configuredHost === host && configuredStateless === stateless && service) {
     return service;
   }
 
   GraftConfig.host = host;
+  GraftConfig.stateless = stateless;
   GraftConfig.rtmCtx = null;
   configuredHost = host;
+  configuredStateless = stateless;
   service = new PerformanceService();
 
   return service;

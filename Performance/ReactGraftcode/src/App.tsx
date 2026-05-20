@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
-import { getGatewayHost, getLargePayload, getSmallValue } from "./graftClient";
+import {
+  getGatewayHost,
+  getGraftStateless,
+  getLargePayload,
+  getSmallValue
+} from "./graftClient";
 import {
   getGrpcBaseUrl,
   getGrpcLargePayload,
@@ -80,6 +85,7 @@ export default function App() {
   const [progress, setProgress] = useState("");
 
   const gatewayHost = useMemo(() => getGatewayHost(), []);
+  const graftStateless = useMemo(() => getGraftStateless(), []);
   const restBaseUrl = useMemo(() => getRestBaseUrl(), []);
   const grpcBaseUrl = useMemo(() => getGrpcBaseUrl(), []);
   const isRunning = state === "running";
@@ -147,7 +153,9 @@ export default function App() {
           <div className="endpoints">
             <p className="endpoint">REST {restBaseUrl}</p>
             <p className="endpoint">gRPC-Web {grpcBaseUrl}</p>
-            <p className="endpoint">Graftcode {gatewayHost}</p>
+            <p className="endpoint">
+              Graftcode {gatewayHost} stateless={String(graftStateless)}
+            </p>
           </div>
         </div>
         <div className={`status status-${state}`}>
