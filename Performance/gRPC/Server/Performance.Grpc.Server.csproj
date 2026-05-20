@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.66.0" />
+    <PackageReference Include="Grpc.AspNetCore.Web" Version="2.66.0" />
     <ProjectReference Include="../../Shared/Performance.Shared.csproj" />
     <Protobuf Include="../Protos/performance.proto" GrpcServices="Server" />
   </ItemGroup>

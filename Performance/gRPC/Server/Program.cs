@@ -15,7 +15,7 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     var configureHttp2 = (ListenOptions listenOptions) =>
     {
-        listenOptions.Protocols = HttpProtocols.Http2;
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
     };
 
     if (listenAnyIp)
@@ -32,11 +32,25 @@ builder.Services.AddGrpc(options =>
     options.MaxReceiveMessageSize = 16 * 1024 * 1024;
     options.MaxSendMessageSize = 16 * 1024 * 1024;
 });
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .SetIsOriginAllowed(_ => true)
+            .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
+    });
+});
 builder.Services.AddSingleton<BenchmarkDataService>();
 
 var app = builder.Build();
 
-app.MapGrpcService<GrpcPerformanceService>();
+app.UseCors();
+app.UseGrpcWeb();
+
+app.MapGrpcService<GrpcPerformanceService>().EnableGrpcWeb();
 
 app.Run();
 

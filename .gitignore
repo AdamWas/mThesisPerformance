@@ -74,3 +74,15 @@ Performance/BenchmarkResults/**/results/
 Performance/Graftcode/Server/run-docker/gg
 Performance/Graftcode/Server/run-docker/Performance.Graftcode.Server.dll
 Performance/Graftcode/Server/run-docker/Performance.Shared.dll
+Performance/Graftcode/Server/run-docker/Binaries.zip
+Performance/Graftcode/Server/run-docker/Binaries/
+Performance/Graftcode/Server/run-docker/GMA.zip
+Performance/Graftcode/Server/run-docker/GMA/
+Performance/Graftcode/Server/run-docker/GVFE.zip
+Performance/Graftcode/Server/run-docker/GVFE/
+Performance/Graftcode/Server/run-docker/_HypertubeCppErrorLogger_*.txt
+
+# JavaScript clients
+node_modules/
+dist/
+*.tsbuildinfo

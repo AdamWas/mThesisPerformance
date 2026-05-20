@@ -1,10 +1,11 @@
 # Performance Study
 
-This directory contains an isolated .NET-to-.NET performance study scaffold for three communication styles:
+This directory contains an isolated performance study scaffold for three communication styles and a browser client:
 
 - REST over HTTP + JSON
 - gRPC over HTTP/2 + Protocol Buffers
-- Graftcode placeholder with the same business-method shape
+- Graftcode with the same business-method shape
+- React frontend calling the .NET Graftcode service through the generated Graft package
 
 The current implemented scenarios are:
 
@@ -18,9 +19,10 @@ The current implemented scenarios are:
 - `REST/Client` - simple REST sanity client.
 - `gRPC/Server` - ASP.NET Core gRPC service on `http://localhost:5101`.
 - `gRPC/Client` - simple gRPC sanity client.
-- `Graftcode/Server` - placeholder service class with matching methods.
-- `Graftcode/Client` - placeholder local call until remote Graftcode invocation is wired.
-- `Benchmarks` - BenchmarkDotNet client-side benchmarks for REST and gRPC.
+- `Graftcode/Server` - .NET service class hosted through Graftcode Gateway.
+- `Graftcode/Client` - .NET sanity client using the generated Graft package.
+- `ReactGraftcode` - Vite/React browser client and benchmark for React -> .NET calls.
+- `Benchmarks` - BenchmarkDotNet client-side benchmarks for REST, gRPC, and Graftcode.
 
 ## Build
 
@@ -56,15 +58,45 @@ gRPC:
 DOTNET_CLI_HOME=/tmp dotnet run --project Performance/gRPC/Client/Performance.Grpc.Client.csproj -c Release -- http://localhost:5101 5
 ```
 
-Graftcode placeholder:
+Graftcode:
 
 ```bash
 DOTNET_CLI_HOME=/tmp dotnet run --project Performance/Graftcode/Client/Performance.Graftcode.Client.csproj -c Release -- 5
 ```
 
+## React -> .NET Graftcode Client
+
+Start the Graftcode gateway first:
+
+```bash
+docker compose up --build graftcode-server
+```
+
+Install the generated Graft package and run the React client:
+
+```bash
+cd Performance/ReactGraftcode
+npm install
+npm run dev
+```
+
+The React client defaults to:
+
+- REST: `http://localhost:5100`
+- gRPC-Web: `http://localhost:5101`
+- Graftcode: `ws://localhost:81/ws`
+
+Override them with `VITE_REST_BASE_URL`, `VITE_GRPC_BASE_URL`, or `VITE_GRAFTCODE_HOST` when needed:
+
+```bash
+VITE_REST_BASE_URL=http://localhost:5100 VITE_GRPC_BASE_URL=http://localhost:5101 VITE_GRAFTCODE_HOST=ws://localhost:81/ws npm run dev
+```
+
+The page includes a sample call and a browser-side benchmark for REST, gRPC-Web, and Graftcode. The large-payload cases read `Payload` in addition to `SizeBytes`, so the measurement forces the full payload through the React client.
+
 ## Benchmarks
 
-Start the REST and gRPC servers first, then run:
+Start the REST, gRPC, and Graftcode servers first, then run:
 
 ```bash
 DOTNET_CLI_HOME=/tmp dotnet run --project Performance/Benchmarks/Performance.Benchmarks.csproj -c Release -- --filter '*CommunicationBenchmarks*'

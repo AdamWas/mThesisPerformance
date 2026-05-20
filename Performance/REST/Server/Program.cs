@@ -4,9 +4,21 @@ var builder = WebApplication.CreateBuilder(args);
 
 var restUrl = Environment.GetEnvironmentVariable("PERFORMANCE_REST_URL") ?? "http://localhost:5100";
 builder.WebHost.UseUrls(restUrl);
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .SetIsOriginAllowed(_ => true);
+    });
+});
 builder.Services.AddSingleton<BenchmarkDataService>();
 
 var app = builder.Build();
+
+app.UseCors();
 
 app.MapGet("/small", (BenchmarkDataService service) => service.GetSmall());
 
