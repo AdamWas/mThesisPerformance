@@ -71,3 +71,6 @@ Performance/.git-local/
 Performance/test-run-*.log
 Performance/BenchmarkResults/**/*.log
 Performance/BenchmarkResults/**/results/
+Performance/Graftcode/Server/run-docker/gg
+Performance/Graftcode/Server/run-docker/Performance.Graftcode.Server.dll
+Performance/Graftcode/Server/run-docker/Performance.Shared.dll
