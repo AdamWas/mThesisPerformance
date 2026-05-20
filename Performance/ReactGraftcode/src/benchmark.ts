@@ -1,5 +1,4 @@
 import { getLargePayload, getSmallValue } from "./graftClient";
-import { getGrpcLargePayload, getGrpcSmallValue } from "./grpcWebClient";
 import { getRestLargePayload, getRestSmallValue } from "./restClient";
 
 export type BenchmarkResult = {
@@ -21,6 +20,16 @@ export type BenchmarkOptions = {
   sizeMb: number;
   warmupCalls: number;
   onProgress?: (completed: number, total: number, label: string) => void;
+};
+
+export type BenchmarkClient = {
+  label: string;
+  transport: string;
+  getSmallValue: () => Promise<number>;
+  getLargePayload: (sizeMb: number) => Promise<{
+    payloadLength: number;
+    sizeBytes: number;
+  }>;
 };
 
 const round = (value: number) => Math.round(value * 100) / 100;
@@ -59,87 +68,73 @@ async function runTimed(
   };
 }
 
-async function warmup(calls: number, sizeMb: number) {
+async function warmup(calls: number, sizeMb: number, clients: BenchmarkClient[]) {
   for (let index = 0; index < calls; index += 1) {
-    await getRestSmallValue();
-    await getGrpcSmallValue();
-    await getSmallValue();
+    for (const client of clients) {
+      await client.getSmallValue();
+    }
   }
 
   if (calls > 0) {
-    await getRestLargePayload(sizeMb);
-    await getGrpcLargePayload(sizeMb);
-    await getLargePayload(sizeMb);
+    for (const client of clients) {
+      await client.getLargePayload(sizeMb);
+    }
   }
 }
 
-export async function runReactGraftBenchmark(options: BenchmarkOptions) {
-  await warmup(options.warmupCalls, options.sizeMb);
+export async function runTransportBenchmark(
+  options: BenchmarkOptions,
+  clients: BenchmarkClient[]
+) {
+  await warmup(options.warmupCalls, options.sizeMb, clients);
 
   const results: BenchmarkResult[] = [];
 
-  results.push(await runTimed(
-    "REST",
-    "small",
-    "REST GetSmall",
-    options.smallCalls,
-    async () => String(await getRestSmallValue()),
-    options.onProgress
-  ));
+  for (const client of clients) {
+    results.push(await runTimed(
+      client.transport,
+      "small",
+      `${client.label} GetSmall`,
+      options.smallCalls,
+      async () => String(await client.getSmallValue()),
+      options.onProgress
+    ));
+  }
 
-  results.push(await runTimed(
-    "gRPC-Web",
-    "small",
-    "gRPC-Web GetSmall",
-    options.smallCalls,
-    async () => String(await getGrpcSmallValue()),
-    options.onProgress
-  ));
-
-  results.push(await runTimed(
-    "Graftcode",
-    "small",
-    "Graftcode GetSmall",
-    options.smallCalls,
-    async () => String(await getSmallValue()),
-    options.onProgress
-  ));
-
-  results.push(await runTimed(
-    "REST",
-    "large",
-    `REST GetLarge ${options.sizeMb} MB`,
-    options.largeCalls,
-    async () => {
-      const payload = await getRestLargePayload(options.sizeMb);
-      return `${payload.payloadLength}/${payload.sizeBytes} bytes`;
-    },
-    options.onProgress
-  ));
-
-  results.push(await runTimed(
-    "gRPC-Web",
-    "large",
-    `gRPC-Web GetLarge ${options.sizeMb} MB`,
-    options.largeCalls,
-    async () => {
-      const payload = await getGrpcLargePayload(options.sizeMb);
-      return `${payload.payloadLength}/${payload.sizeBytes} bytes`;
-    },
-    options.onProgress
-  ));
-
-  results.push(await runTimed(
-    "Graftcode",
-    "large",
-    `Graftcode GetLarge ${options.sizeMb} MB`,
-    options.largeCalls,
-    async () => {
-      const payload = await getLargePayload(options.sizeMb);
-      return `${payload.payloadLength}/${payload.sizeBytes} bytes`;
-    },
-    options.onProgress
-  ));
+  for (const client of clients) {
+    results.push(await runTimed(
+      client.transport,
+      "large",
+      `${client.label} GetLarge ${options.sizeMb} MB`,
+      options.largeCalls,
+      async () => {
+        const payload = await client.getLargePayload(options.sizeMb);
+        return `${payload.payloadLength}/${payload.sizeBytes} bytes`;
+      },
+      options.onProgress
+    ));
+  }
 
   return results;
+}
+
+export function getDotNetBenchmarkClients(): BenchmarkClient[] {
+  return [
+    {
+      label: "REST",
+      transport: "REST",
+      getSmallValue: getRestSmallValue,
+      getLargePayload: getRestLargePayload
+    },
+    {
+      label: "Graftcode",
+      transport: "Graftcode",
+      getSmallValue,
+      getLargePayload
+    }
+  ];
+}
+
+export async function runReactGraftBenchmark(options: BenchmarkOptions) {
+  return runTransportBenchmark(options, getDotNetBenchmarkClients());
 }

@@ -55,6 +55,14 @@ h1 {
   letter-spacing: 0;
 }
 
+h2 {
+  margin: 0;
+  color: #101828;
+  font-size: 1.8rem;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
 .endpoints {
   display: grid;
   gap: 6px;
@@ -106,6 +114,18 @@ h1 {
   grid-template-columns: 280px minmax(0, 1fr);
   gap: 28px;
   padding-top: 28px;
+}
+
+.benchmark-panel {
+  padding: 28px 0;
+  border-bottom: 1px solid #dfe4ec;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 .controls {
@@ -218,6 +238,7 @@ tr:last-child td {
   }
 
   .summary,
+  .panel-heading,
   .workspace {
     display: grid;
   }

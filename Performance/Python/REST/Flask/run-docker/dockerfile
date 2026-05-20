@@ -1,0 +1,11 @@
+FROM python:3.12-slim
+
+WORKDIR /usr/app
+
+COPY Performance /usr/app/Performance
+
+RUN python -m pip install --no-cache-dir -r /usr/app/Performance/Python/REST/Flask/requirements.txt
+
+EXPOSE 5202
+
+CMD ["python", "-m", "gunicorn", "--bind", "0.0.0.0:5202", "Performance.Python.REST.Flask.server:app"]

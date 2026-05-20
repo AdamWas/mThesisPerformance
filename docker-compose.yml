@@ -39,6 +39,49 @@ services:
     networks:
       - performance-tests
 
+  python-fastapi-server:
+    image: thesis-performance-python-fastapi:local
+    build:
+      context: .
+      dockerfile: Performance/Python/REST/FastAPI/run-docker/dockerfile
+    ports:
+      - "5200:5200"
+    networks:
+      - performance-tests
+
+  python-grpc-server:
+    image: thesis-performance-python-grpc:local
+    build:
+      context: .
+      dockerfile: Performance/Python/gRPC/run-docker/dockerfile
+    environment:
+      PERFORMANCE_PYTHON_GRPC_PORT: "5201"
+    ports:
+      - "5201:5201"
+    networks:
+      - performance-tests
+
+  python-flask-server:
+    image: thesis-performance-python-flask:local
+    build:
+      context: .
+      dockerfile: Performance/Python/REST/Flask/run-docker/dockerfile
+    ports:
+      - "5202:5202"
+    networks:
+      - performance-tests
+
+  python-graftcode-server:
+    image: thesis-performance-python-graftcode:local
+    build:
+      context: .
+      dockerfile: Performance/Python/Graftcode/Server/run-docker/dockerfile
+    ports:
+      - "5203:5203"
+      - "5204:5204"
+    networks:
+      - performance-tests
+
 networks:
   performance-tests:
     name: thesis-performance-tests

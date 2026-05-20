@@ -5,6 +5,9 @@ import {
 
 const defaultGatewayHost = "ws://localhost:81/ws";
 const defaultStateless = false;
+const dotNetGraftName = "@graft/nuget-Performance.Graftcode.Server.dll";
+const dotNetRuntimeName = "netcore";
+const dotNetModule = "Performance.Graftcode.Server.dll";
 
 let configuredHost: string | undefined;
 let configuredStateless: boolean | undefined;
@@ -28,10 +31,21 @@ export function configureGraft(
   host = getGatewayHost(),
   stateless = getGraftStateless()
 ) {
-  if (configuredHost === host && configuredStateless === stateless && service) {
+  const alreadyConfigured =
+    configuredHost === host &&
+    configuredStateless === stateless &&
+    GraftConfig.graftName === dotNetGraftName &&
+    GraftConfig.runtimeName === dotNetRuntimeName &&
+    GraftConfig.module === dotNetModule &&
+    GraftConfig.rtmCtx != null;
+
+  if (alreadyConfigured && service) {
     return service;
   }
 
+  GraftConfig.graftName = dotNetGraftName;
+  GraftConfig.runtimeName = dotNetRuntimeName;
+  GraftConfig.module = dotNetModule;
   GraftConfig.host = host;
   GraftConfig.stateless = stateless;
   GraftConfig.rtmCtx = null;

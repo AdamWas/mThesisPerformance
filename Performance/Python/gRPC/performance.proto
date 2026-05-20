@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package performance;
+
+service PerformanceService {
+  rpc GetSmall (SmallRequest) returns (SmallReply);
+  rpc GetLarge (LargeRequest) returns (LargeReply);
+}
+
+message SmallRequest {
+}
+
+message SmallReply {
+  int32 value = 1;
+}
+
+message LargeRequest {
+  int32 size_mb = 1;
+}
+
+message LargeReply {
+  string payload = 1;
+  int32 size_bytes = 2;
+}

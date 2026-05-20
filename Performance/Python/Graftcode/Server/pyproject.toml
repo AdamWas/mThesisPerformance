@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "performance-python-graftcode-server"
+version = "1.0.1"
+description = "Python performance service exposed through Graftcode Gateway"
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["performance_graftcode_server*"]

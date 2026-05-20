@@ -1,0 +1,3 @@
+grpcio==1.73.1
+grpcio-tools==1.73.1
+graft-nuget-performance.graftcode.server==1.0.1

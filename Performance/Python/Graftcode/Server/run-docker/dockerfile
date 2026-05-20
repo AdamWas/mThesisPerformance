@@ -1,0 +1,17 @@
+FROM python:3.12-slim
+
+WORKDIR /usr/app
+
+COPY Performance/Python/Graftcode/Server /usr/app
+COPY Performance/Graftcode/Server/run-docker/gg /usr/app/gg
+COPY Performance/Graftcode/Server/run-docker/Binaries.zip /usr/app/Binaries.zip
+COPY Performance/Graftcode/Server/run-docker/GMA.zip /usr/app/GMA.zip
+COPY Performance/Graftcode/Server/run-docker/GVFE.zip /usr/app/GVFE.zip
+
+RUN chmod +x /usr/app/gg \
+    && python -m pip install --no-cache-dir -e /usr/app
+
+EXPOSE 5203
+EXPOSE 5204
+
+CMD ["./gg", "./performance_graftcode_server", "--runtime", "python", "--port", "5203", "--httpPort", "5204"]

@@ -6,19 +6,28 @@ import {
   getSmallValue
 } from "./graftClient";
 import {
-  getGrpcBaseUrl,
-  getGrpcLargePayload,
-  getGrpcSmallValue
-} from "./grpcWebClient";
-import {
   getRestBaseUrl,
   getRestLargePayload,
   getRestSmallValue
 } from "./restClient";
 import {
+  getPythonGatewayHost,
+  getPythonGraftLargePayload,
+  getPythonGraftSmallValue,
+  getPythonGraftStateless,
+  getPythonGraftTypeName
+} from "./pythonGraftClient";
+import {
+  getPythonFastApiBaseUrl,
+  getPythonFlaskBaseUrl,
+  getPythonRestLargePayload,
+  getPythonRestSmallValue
+} from "./pythonRestClient";
+import {
+  BenchmarkClient,
   BenchmarkOptions,
   BenchmarkResult,
-  runReactGraftBenchmark
+  runTransportBenchmark
 } from "./benchmark";
 import "./styles.css";
 
@@ -74,7 +83,21 @@ function ResultTable({ results }: { results: BenchmarkResult[] }) {
   );
 }
 
-export default function App() {
+type BenchmarkPanelProps = {
+  title: string;
+  eyebrow: string;
+  endpoints: string[];
+  samplePrefix: string;
+  clients: BenchmarkClient[];
+};
+
+function BenchmarkPanel({
+  title,
+  eyebrow,
+  endpoints,
+  samplePrefix,
+  clients
+}: BenchmarkPanelProps) {
   const [state, setState] = useState<RunState>("idle");
   const [smallCalls, setSmallCalls] = useState(defaultOptions.smallCalls);
   const [largeCalls, setLargeCalls] = useState(defaultOptions.largeCalls);
@@ -83,11 +106,6 @@ export default function App() {
   const [sample, setSample] = useState("No sample yet");
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
-
-  const gatewayHost = useMemo(() => getGatewayHost(), []);
-  const graftStateless = useMemo(() => getGraftStateless(), []);
-  const restBaseUrl = useMemo(() => getRestBaseUrl(), []);
-  const grpcBaseUrl = useMemo(() => getGrpcBaseUrl(), []);
   const isRunning = state === "running";
 
   async function runSample() {
@@ -96,19 +114,17 @@ export default function App() {
     setProgress("Calling backend");
 
     try {
-      const [rest, grpc, graftcode] = await Promise.all([
-        Promise.all([getRestSmallValue(), getRestLargePayload(sizeMb)]),
-        Promise.all([getGrpcSmallValue(), getGrpcLargePayload(sizeMb)]),
-        Promise.all([getSmallValue(), getLargePayload(sizeMb)])
-      ]);
-
-      setSample(
-        [
-          `REST=${rest[0]} ${rest[1].payloadLength}/${rest[1].sizeBytes}`,
-          `gRPC-Web=${grpc[0]} ${grpc[1].payloadLength}/${grpc[1].sizeBytes}`,
-          `Graftcode=${graftcode[0]} ${graftcode[1].payloadLength}/${graftcode[1].sizeBytes}`
-        ].join(" | ")
+      const values = await Promise.all(
+        clients.map(async (client) => {
+          const [small, large] = await Promise.all([
+            client.getSmallValue(),
+            client.getLargePayload(sizeMb)
+          ]);
+          return `${client.label}=${small} ${large.payloadLength}/${large.sizeBytes}`;
+        })
       );
+
+      setSample(`${samplePrefix}: ${values.join(" | ")}`);
       setState("done");
       setProgress("");
     } catch (ex) {
@@ -124,15 +140,18 @@ export default function App() {
     setResults([]);
 
     try {
-      const benchmarkResults = await runReactGraftBenchmark({
-        smallCalls,
-        largeCalls,
-        sizeMb,
-        warmupCalls: defaultOptions.warmupCalls,
-        onProgress: (completed, total, label) => {
-          setProgress(`${label}: ${completed}/${total}`);
-        }
-      });
+      const benchmarkResults = await runTransportBenchmark(
+        {
+          smallCalls,
+          largeCalls,
+          sizeMb,
+          warmupCalls: defaultOptions.warmupCalls,
+          onProgress: (completed, total, label) => {
+            setProgress(`${label}: ${completed}/${total}`);
+          }
+        },
+        clients
+      );
 
       setResults(benchmarkResults);
       setState("done");
@@ -145,25 +164,25 @@ export default function App() {
   }
 
   return (
-    <main>
-      <section className="summary">
+    <section className="benchmark-panel">
+      <div className="panel-heading">
         <div>
-          <p className="eyebrow">React to .NET transport benchmark</p>
-          <h1>Performance Service</h1>
+          <p className="eyebrow">{eyebrow}</p>
+          <h2>{title}</h2>
           <div className="endpoints">
-            <p className="endpoint">REST {restBaseUrl}</p>
-            <p className="endpoint">gRPC-Web {grpcBaseUrl}</p>
-            <p className="endpoint">
-              Graftcode {gatewayHost} stateless={String(graftStateless)}
-            </p>
+            {endpoints.map((endpoint) => (
+              <p className="endpoint" key={endpoint}>
+                {endpoint}
+              </p>
+            ))}
           </div>
         </div>
         <div className={`status status-${state}`}>
           {isRunning ? progress || "Running" : state}
         </div>
-      </section>
+      </div>
 
-      <section className="workspace">
+      <div className="workspace">
         <aside className="controls">
           <label>
             <span>Small calls</span>
@@ -211,7 +230,95 @@ export default function App() {
           {error && <pre className="error">{error}</pre>}
           <ResultTable results={results} />
         </section>
+      </div>
+    </section>
+  );
+}
+
+export default function App() {
+  const dotNetClients = useMemo<BenchmarkClient[]>(
+    () => [
+      {
+        label: "REST",
+        transport: "REST",
+        getSmallValue: getRestSmallValue,
+        getLargePayload: getRestLargePayload
+      },
+      {
+        label: "Graftcode",
+        transport: "Graftcode",
+        getSmallValue,
+        getLargePayload
+      }
+    ],
+    []
+  );
+
+  const pythonClients = useMemo<BenchmarkClient[]>(
+    () => [
+      {
+        label: "FastAPI REST",
+        transport: "REST",
+        getSmallValue: () => getPythonRestSmallValue("fastapi"),
+        getLargePayload: (sizeMb) => getPythonRestLargePayload("fastapi", sizeMb)
+      },
+      {
+        label: "Flask REST",
+        transport: "REST",
+        getSmallValue: () => getPythonRestSmallValue("flask"),
+        getLargePayload: (sizeMb) => getPythonRestLargePayload("flask", sizeMb)
+      },
+      {
+        label: "Graftcode",
+        transport: "Graftcode",
+        getSmallValue: getPythonGraftSmallValue,
+        getLargePayload: getPythonGraftLargePayload
+      }
+    ],
+    []
+  );
+
+  const gatewayHost = useMemo(() => getGatewayHost(), []);
+  const graftStateless = useMemo(() => getGraftStateless(), []);
+  const restBaseUrl = useMemo(() => getRestBaseUrl(), []);
+  const pythonGatewayHost = useMemo(() => getPythonGatewayHost(), []);
+  const pythonGraftStateless = useMemo(() => getPythonGraftStateless(), []);
+  const pythonGraftType = useMemo(() => getPythonGraftTypeName(), []);
+  const pythonFastApiBaseUrl = useMemo(() => getPythonFastApiBaseUrl(), []);
+  const pythonFlaskBaseUrl = useMemo(() => getPythonFlaskBaseUrl(), []);
+
+  return (
+    <main>
+      <section className="summary">
+        <div>
+          <p className="eyebrow">Transport benchmark</p>
+          <h1>Performance Service</h1>
+        </div>
       </section>
+
+      <BenchmarkPanel
+        title="React to .NET"
+        eyebrow="Existing backend"
+        samplePrefix=".NET"
+        clients={dotNetClients}
+        endpoints={[
+          `REST ${restBaseUrl}`,
+          `Graftcode ${gatewayHost} stateless=${String(graftStateless)}`
+        ]}
+      />
+
+      <BenchmarkPanel
+        title="React to Python"
+        eyebrow="Python backend"
+        samplePrefix="Python"
+        clients={pythonClients}
+        endpoints={[
+          `FastAPI REST ${pythonFastApiBaseUrl}`,
+          `Flask REST ${pythonFlaskBaseUrl}`,
+          `Graftcode ${pythonGatewayHost} stateless=${String(pythonGraftStateless)}`,
+          `Graftcode type ${pythonGraftType}`
+        ]}
+      />
     </main>
   );
 }

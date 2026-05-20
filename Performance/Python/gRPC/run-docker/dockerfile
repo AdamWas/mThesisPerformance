@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+WORKDIR /usr/app
+
+COPY Performance /usr/app/Performance
+
+RUN python -m pip install --no-cache-dir -r /usr/app/Performance/Python/gRPC/requirements.txt \
+    && mkdir -p /usr/app/Performance/Python/gRPC/generated \
+    && python -m grpc_tools.protoc \
+        -I/usr/app/Performance/Python/gRPC \
+        --python_out=/usr/app/Performance/Python/gRPC/generated \
+        --grpc_python_out=/usr/app/Performance/Python/gRPC/generated \
+        /usr/app/Performance/Python/gRPC/performance.proto \
+    && touch /usr/app/Performance/Python/gRPC/generated/__init__.py
+
+ENV PYTHONPATH=/usr/app
+
+EXPOSE 5201
+
+CMD ["python", "-m", "Performance.Python.gRPC.server"]
