@@ -1,0 +1,25 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Performance/Shared/Performance.Shared.csproj Performance/Shared/
+COPY Performance/gRPC/Server/Performance.Grpc.Server.csproj Performance/gRPC/Server/
+COPY Performance/gRPC/Protos/ Performance/gRPC/Protos/
+RUN dotnet restore Performance/gRPC/Server/Performance.Grpc.Server.csproj
+
+COPY Performance/Shared/ Performance/Shared/
+COPY Performance/gRPC/Server/ Performance/gRPC/Server/
+RUN dotnet publish Performance/gRPC/Server/Performance.Grpc.Server.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /usr/app
+
+ENV PERFORMANCE_GRPC_PORT=5101
+ENV PERFORMANCE_GRPC_LISTEN_ANY_IP=true
+EXPOSE 5101
+
+COPY --from=build /app/publish .
+
+CMD ["dotnet", "Performance.Grpc.Server.dll"]

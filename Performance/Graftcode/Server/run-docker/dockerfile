@@ -9,4 +9,6 @@ RUN apt-get update && \
 COPY . .
 RUN chmod +x ./gg
 
+EXPOSE 81 5004
+
 CMD ["./gg", "./Performance.Graftcode.Server.dll", "--port", "81", "--httpPort", "5004"]

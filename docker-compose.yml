@@ -1,0 +1,44 @@
+name: thesis-performance
+
+services:
+  rest-server:
+    image: thesis-performance-rest:local
+    build:
+      context: .
+      dockerfile: Performance/REST/Server/run-docker/dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      PERFORMANCE_REST_URL: http://0.0.0.0:5100
+    ports:
+      - "5100:5100"
+    networks:
+      - performance-tests
+
+  grpc-server:
+    image: thesis-performance-grpc:local
+    build:
+      context: .
+      dockerfile: Performance/gRPC/Server/run-docker/dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Production
+      PERFORMANCE_GRPC_PORT: "5101"
+      PERFORMANCE_GRPC_LISTEN_ANY_IP: "true"
+    ports:
+      - "5101:5101"
+    networks:
+      - performance-tests
+
+  graftcode-server:
+    image: thesis-performance-graftcode:local
+    build:
+      context: Performance/Graftcode/Server/run-docker
+      dockerfile: dockerfile
+    ports:
+      - "81:81"
+      - "5004:5004"
+    networks:
+      - performance-tests
+
+networks:
+  performance-tests:
+    name: thesis-performance-tests

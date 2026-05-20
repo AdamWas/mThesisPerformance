@@ -1,0 +1,23 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY Performance/Shared/Performance.Shared.csproj Performance/Shared/
+COPY Performance/REST/Server/Performance.Rest.Server.csproj Performance/REST/Server/
+RUN dotnet restore Performance/REST/Server/Performance.Rest.Server.csproj
+
+COPY Performance/Shared/ Performance/Shared/
+COPY Performance/REST/Server/ Performance/REST/Server/
+RUN dotnet publish Performance/REST/Server/Performance.Rest.Server.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /usr/app
+
+ENV PERFORMANCE_REST_URL=http://0.0.0.0:5100
+EXPOSE 5100
+
+COPY --from=build /app/publish .
+
+CMD ["dotnet", "Performance.Rest.Server.dll"]

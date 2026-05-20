@@ -5,12 +5,26 @@ using Performance.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var grpcPort = int.TryParse(Environment.GetEnvironmentVariable("PERFORMANCE_GRPC_PORT"), out var configuredGrpcPort)
+    ? configuredGrpcPort
+    : 5101;
+var listenAnyIp = bool.TryParse(Environment.GetEnvironmentVariable("PERFORMANCE_GRPC_LISTEN_ANY_IP"), out var configuredListenAnyIp)
+    && configuredListenAnyIp;
+
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenLocalhost(5101, listenOptions =>
+    var configureHttp2 = (ListenOptions listenOptions) =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
-    });
+    };
+
+    if (listenAnyIp)
+    {
+        options.ListenAnyIP(grpcPort, configureHttp2);
+        return;
+    }
+
+    options.ListenLocalhost(grpcPort, configureHttp2);
 });
 
 builder.Services.AddGrpc(options =>

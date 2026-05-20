@@ -1,0 +1,12 @@
+.agents/
+.codex/
+.git/
+
+**/.git-local/
+**/bin/
+**/obj/
+
+BenchmarkDotNet.Artifacts/
+Performance/BenchmarkResults/
+Performance/test-run-*.log
+Performance/.env.local

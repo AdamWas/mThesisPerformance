@@ -2,7 +2,8 @@ using Performance.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5100");
+var restUrl = Environment.GetEnvironmentVariable("PERFORMANCE_REST_URL") ?? "http://localhost:5100";
+builder.WebHost.UseUrls(restUrl);
 builder.Services.AddSingleton<BenchmarkDataService>();
 
 var app = builder.Build();
