@@ -29,6 +29,7 @@ import {
   BenchmarkResult,
   runTransportBenchmark
 } from "./benchmark";
+import { saveBenchmarkLog } from "./logging";
 import "./styles.css";
 
 type RunState = "idle" | "running" | "done" | "error";
@@ -107,6 +108,12 @@ function BenchmarkPanel({
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
   const isRunning = state === "running";
+  const logOptions = {
+    smallCalls,
+    largeCalls,
+    sizeMb,
+    warmupCalls: defaultOptions.warmupCalls
+  };
 
   async function runSample() {
     setState("running");
@@ -124,11 +131,29 @@ function BenchmarkPanel({
         })
       );
 
-      setSample(`${samplePrefix}: ${values.join(" | ")}`);
+      const sampleResult = `${samplePrefix}: ${values.join(" | ")}`;
+      setSample(sampleResult);
+      saveBenchmarkLog({
+        kind: "sample",
+        panel: title,
+        status: "success",
+        endpoints,
+        options: logOptions,
+        sample: sampleResult
+      });
       setState("done");
       setProgress("");
     } catch (ex) {
-      setError(ex instanceof Error ? ex.message : String(ex));
+      const message = ex instanceof Error ? ex.message : String(ex);
+      setError(message);
+      saveBenchmarkLog({
+        kind: "sample",
+        panel: title,
+        status: "error",
+        endpoints,
+        options: logOptions,
+        error: message
+      });
       setState("error");
       setProgress("");
     }
@@ -154,10 +179,27 @@ function BenchmarkPanel({
       );
 
       setResults(benchmarkResults);
+      saveBenchmarkLog({
+        kind: "benchmark",
+        panel: title,
+        status: "success",
+        endpoints,
+        options: logOptions,
+        results: benchmarkResults
+      });
       setState("done");
       setProgress("");
     } catch (ex) {
-      setError(ex instanceof Error ? ex.message : String(ex));
+      const message = ex instanceof Error ? ex.message : String(ex);
+      setError(message);
+      saveBenchmarkLog({
+        kind: "benchmark",
+        panel: title,
+        status: "error",
+        endpoints,
+        options: logOptions,
+        error: message
+      });
       setState("error");
       setProgress("");
     }
