@@ -32,6 +32,7 @@ The implemented scenarios are:
 - `Python/Benchmarks` - Python-side benchmark for FastAPI REST, Flask REST, native gRPC, and Graftcode.
 - `Benchmarks` - BenchmarkDotNet client-side benchmark for REST, gRPC, and Graftcode.
 - `ReactGraftcode` - Vite/React browser client and benchmark for .NET and Python backend sections.
+- `LoadTests` - .NET ramp-load runner for REST, gRPC, and Graftcode endpoints across .NET and Python hosts.
 
 ## Start Backends
 
@@ -162,6 +163,64 @@ python -m grpc_tools.protoc \
 touch Performance/Python/gRPC/generated/__init__.py
 python -m Performance.Python.Benchmarks.benchmark
 ```
+
+## Run Load Tests
+
+The BenchmarkDotNet and Python benchmark projects measure per-call latency in mostly sequential clients. To find when a host starts to saturate, use the .NET load runner. It ramps concurrency and reports successful calls, errors, requests per second, p50/p95/p99 latency, and a saturation reason.
+
+Start the services first:
+
+```bash
+docker compose up --build rest-server grpc-server graftcode-server python-fastapi-server python-grpc-server python-flask-server python-graftcode-server
+```
+
+Run a small-payload ramp against every host:
+
+```bash
+DOTNET_CLI_HOME=/tmp dotnet run --project Performance/LoadTests/Performance.LoadTests.csproj -c Release -- \
+  --scenario small \
+  --concurrency 1,2,4,8,16,32,64 \
+  --duration-s 15 \
+  --json-out Performance/LoadTests/load-small.json
+```
+
+Run a large-payload ramp:
+
+```bash
+DOTNET_CLI_HOME=/tmp dotnet run --project Performance/LoadTests/Performance.LoadTests.csproj -c Release -- \
+  --scenario large \
+  --size-mb 5 \
+  --concurrency 1,2,4,8,16,32 \
+  --duration-s 15 \
+  --json-out Performance/LoadTests/load-large-5mb.json
+```
+
+Run selected endpoints only:
+
+```bash
+DOTNET_CLI_HOME=/tmp dotnet run --project Performance/LoadTests/Performance.LoadTests.csproj -c Release -- \
+  --endpoint dotnet-rest \
+  --endpoint dotnet-grpc \
+  --endpoint dotnet-graft \
+  --endpoint python-fastapi \
+  --endpoint python-flask \
+  --endpoint python-grpc \
+  --endpoint python-graft
+```
+
+Default endpoint addresses:
+
+- `dotnet-rest`: `http://localhost:5100`
+- `dotnet-grpc`: `http://localhost:5101`
+- `dotnet-graft`: `ws://localhost:81/ws`
+- `python-fastapi`: `http://localhost:5200`
+- `python-flask`: `http://localhost:5202`
+- `python-grpc`: `http://localhost:5201`
+- `python-graft`: `ws://localhost:5203/ws`
+
+Override them with `--dotnet-rest-url`, `--dotnet-grpc-url`, `--dotnet-graft-host`, `--python-fastapi-url`, `--python-flask-url`, `--python-grpc-target`, or `--python-graft-host`.
+
+By default, a level is marked saturated when error rate reaches 1%, p95 reaches 1000 ms, or throughput drops below 85% of the best previous level. Tune those thresholds with `--max-error-rate`, `--max-p95-ms`, and `--rps-drop-ratio`.
 
 ## Run React Client
 

@@ -9,6 +9,9 @@
   <Folder Name="/Graftcode/Server/">
     <Project Path="Graftcode/Server/Performance.Graftcode.Server.csproj" />
   </Folder>
+  <Folder Name="/LoadTests/">
+    <Project Path="LoadTests/Performance.LoadTests.csproj" />
+  </Folder>
   <Folder Name="/gRPC/" />
   <Folder Name="/gRPC/Client/">
     <Project Path="gRPC/Client/Performance.Grpc.Client.csproj" />

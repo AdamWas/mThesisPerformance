@@ -10,12 +10,14 @@ var grpcPort = int.TryParse(Environment.GetEnvironmentVariable("PERFORMANCE_GRPC
     : 5101;
 var listenAnyIp = bool.TryParse(Environment.GetEnvironmentVariable("PERFORMANCE_GRPC_LISTEN_ANY_IP"), out var configuredListenAnyIp)
     && configuredListenAnyIp;
+var http2Only = bool.TryParse(Environment.GetEnvironmentVariable("PERFORMANCE_GRPC_HTTP2_ONLY"), out var configuredHttp2Only)
+    && configuredHttp2Only;
 
 builder.WebHost.ConfigureKestrel(options =>
 {
     var configureHttp2 = (ListenOptions listenOptions) =>
     {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+        listenOptions.Protocols = http2Only ? HttpProtocols.Http2 : HttpProtocols.Http1AndHttp2;
     };
 
     if (listenAnyIp)
