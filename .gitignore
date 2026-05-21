@@ -86,3 +86,9 @@ Performance/Graftcode/Server/run-docker/_HypertubeCppErrorLogger_*.txt
 node_modules/
 dist/
 *.tsbuildinfo
+
+# Python benchmark/generated artifacts
+__pycache__/
+*.py[cod]
+Performance/Python/gRPC/generated/performance_pb2.py
+Performance/Python/gRPC/generated/performance_pb2_grpc.py

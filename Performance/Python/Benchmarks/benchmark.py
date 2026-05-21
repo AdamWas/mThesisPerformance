@@ -7,6 +7,7 @@ from pathlib import Path
 import statistics
 import sys
 import time
+from types import SimpleNamespace
 from typing import Any, Callable
 from urllib.request import urlopen
 
@@ -23,28 +24,63 @@ import performance_pb2_grpc  # type: ignore  # noqa: E402
 
 INSTALL_COMMAND = (
     "python -m pip install --extra-index-url "
-    "https://grft.dev/simple/274021c2-9d69-4c67-9006-053188e20ec0__free "
-    "graft-nuget-performance.graftcode.server==1.0.1"
+    "https://grft.dev/simple/8ec149dd-e85d-4ee1-b554-25ef86b33351__free "
+    "graft-pypi-performance-python-graftcode-server==1.0.1"
 )
 
 
 def import_graft_module() -> Any:
     candidates = [
-        "graft_nuget_performance_graftcode_server",
-        "graft_nuget_performance.graftcode.server",
-        "graft.nuget.performance.graftcode.server",
+        "graft_pypi_performance_python_graftcode_server",
+        "graft_pypi_performance.python.graftcode.server",
+        "graft.pypi.performance.python.graftcode.server",
     ]
 
     for candidate in candidates:
         try:
-            return importlib.import_module(candidate)
+            module = importlib.import_module(candidate)
+            if hasattr(module, "GraftConfig") and hasattr(module, "PerformanceService"):
+                return module
         except ModuleNotFoundError:
             continue
+
+    try:
+        config_module = importlib.import_module(
+            "graft_pypi_performance_python_graftcode_server."
+            "graft.pypi.performance_python_graftcode_server.graft_config"
+        )
+        return SimpleNamespace(
+            GraftConfig=config_module.GraftConfig,
+            PerformanceService=PythonGraftBenchmarkService,
+        )
+    except ModuleNotFoundError:
+        pass
 
     raise ModuleNotFoundError(
         "Could not import the generated Graft package. Install it first with:\n"
         f"{INSTALL_COMMAND}"
     )
+
+
+class PythonGraftBenchmarkService:
+    def __init__(self) -> None:
+        from graft_pypi_performance_python_graftcode_server.graft.pypi.performance_python_graftcode_server import (
+            GraftConfig,
+        )
+
+        GraftConfig.init()
+        self._instance = (
+            GraftConfig.rtm_ctx
+            .get_type("performance_graftcode_server.performance_service.PerformanceService")
+            .create_instance()
+            .execute()
+        )
+
+    def get_small(self) -> Any:
+        return self._instance.invoke_instance_method("get_small").execute().get_value()
+
+    def get_large(self, size_mb: int) -> Any:
+        return self._instance.invoke_instance_method("get_large", size_mb).execute().get_value()
 
 
 def read_attr_or_call(obj: Any, field_name: str) -> Any:
@@ -53,6 +89,12 @@ def read_attr_or_call(obj: Any, field_name: str) -> Any:
     for name in field_candidates:
         if not name:
             continue
+        if hasattr(obj, "get_instance_field"):
+            try:
+                field = obj.get_instance_field(name).execute()
+                return field.get_value()
+            except Exception:
+                pass
         if hasattr(obj, name):
             value = getattr(obj, name)
             return value() if callable(value) else value

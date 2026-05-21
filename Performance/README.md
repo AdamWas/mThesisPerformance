@@ -152,7 +152,7 @@ Then run the Python benchmark from another terminal:
 
 ```bash
 source .venv/bin/activate
-python -m pip install -r Performance/Python/Benchmarks/requirements.txt --extra-index-url https://grft.dev/simple/274021c2-9d69-4c67-9006-053188e20ec0__free
+python -m pip install -r Performance/Python/Benchmarks/requirements.txt --extra-index-url https://grft.dev/simple/8ec149dd-e85d-4ee1-b554-25ef86b33351__free
 mkdir -p Performance/Python/gRPC/generated
 python -m grpc_tools.protoc \
   -IPerformance/Python/gRPC \
