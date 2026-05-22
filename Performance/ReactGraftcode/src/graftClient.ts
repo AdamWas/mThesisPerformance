@@ -57,29 +57,19 @@ export function configureGraft(
 }
 
 export async function getSmallValue() {
-  const payload = await callServiceMethod("GetSmall");
-  return readField<number>(payload, "Value");
+  const payload = await configureGraft().GetSmall();
+  return payload.get_Value();
 }
 
 export async function getLargePayload(sizeMb: number) {
-  const payload = await callServiceMethod("GetLarge", sizeMb);
+  const payload = await configureGraft().GetLarge(sizeMb);
   const [sizeBytes, body] = await Promise.all([
-    readField<number>(payload, "SizeBytes"),
-    readField<string>(payload, "Payload")
+    payload.get_SizeBytes(),
+    payload.get_Payload()
   ]);
 
   return {
     sizeBytes,
     payloadLength: body.length
   };
-}
-
-async function callServiceMethod(methodName: string, ...args: unknown[]) {
-  const serviceInstance = configureGraft().instance;
-  return serviceInstance.invokeInstanceMethod(methodName, ...args).execute();
-}
-
-async function readField<T>(target: any, fieldName: string): Promise<T> {
-  const field = await target.getInstanceField(fieldName).execute();
-  return field.getValue() as T;
 }
