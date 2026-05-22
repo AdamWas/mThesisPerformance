@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -119,15 +120,15 @@ public sealed record LoadOptions(
             Scenario: Enum.Parse<Scenario>(Get(values, "scenario", "small"), ignoreCase: true),
             Concurrency: Get(values, "concurrency", "1,2,4,8,16,32,64")
                 .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                .Select(int.Parse)
+                .Select(ParseInt)
                 .ToArray(),
-            Duration: TimeSpan.FromSeconds(double.Parse(Get(values, "duration-s", "15"))),
-            Warmup: TimeSpan.FromSeconds(double.Parse(Get(values, "warmup-s", "2"))),
-            SizeMb: int.Parse(Get(values, "size-mb", "1")),
-            Timeout: TimeSpan.FromSeconds(double.Parse(Get(values, "timeout-s", "10"))),
-            MaxErrorRate: double.Parse(Get(values, "max-error-rate", "0.01")),
-            MaxP95Ms: double.Parse(Get(values, "max-p95-ms", "1000")),
-            RpsDropRatio: double.Parse(Get(values, "rps-drop-ratio", "0.85")),
+            Duration: TimeSpan.FromSeconds(ParseDouble(Get(values, "duration-s", "15"))),
+            Warmup: TimeSpan.FromSeconds(ParseDouble(Get(values, "warmup-s", "2"))),
+            SizeMb: ParseInt(Get(values, "size-mb", "1")),
+            Timeout: TimeSpan.FromSeconds(ParseDouble(Get(values, "timeout-s", "10"))),
+            MaxErrorRate: ParseDouble(Get(values, "max-error-rate", "0.01")),
+            MaxP95Ms: ParseDouble(Get(values, "max-p95-ms", "1000")),
+            RpsDropRatio: ParseDouble(Get(values, "rps-drop-ratio", "0.85")),
             KeepGoing: values.ContainsKey("keep-going"),
             JsonOut: values.TryGetValue("json-out", out var jsonOut) ? jsonOut.LastOrDefault() : null,
             DotNetRestUrl: Get(values, "dotnet-rest-url", "http://localhost:5100"),
@@ -184,6 +185,16 @@ public sealed record LoadOptions(
     private static string[] GetMany(Dictionary<string, List<string>> values, string name, string fallback)
     {
         return values.TryGetValue(name, out var list) ? list.ToArray() : [fallback];
+    }
+
+    private static int ParseInt(string value)
+    {
+        return int.Parse(value, CultureInfo.InvariantCulture);
+    }
+
+    private static double ParseDouble(string value)
+    {
+        return double.Parse(value, CultureInfo.InvariantCulture);
     }
 }
 

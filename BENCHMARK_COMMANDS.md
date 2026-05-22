@@ -69,3 +69,48 @@ Vite zwykle wystartuje tutaj:
 http://localhost:5173/
 ```
 
+## 5. Testy Obciazeniowe
+
+Terminal 2, przy wlaczonym `docker compose up --build`:
+
+```bash
+cd /home/adam/Coding/mgr2/mThesisPerformance
+DOTNET_CLI_HOME=/tmp dotnet run --project Performance/LoadTests/Performance.LoadTests.csproj -c Release -- \
+  --scenario small \
+  --concurrency 1,2,4,8,16,32,64 \
+  --duration-s 15 \
+  --json-out Performance/LoadTests/load-small.json
+```
+
+Dla duzych payloadow:
+
+```bash
+cd /home/adam/Coding/mgr2/mThesisPerformance
+DOTNET_CLI_HOME=/tmp dotnet run --project Performance/LoadTests/Performance.LoadTests.csproj -c Release -- \
+  --scenario large \
+  --size-mb 5 \
+  --concurrency 1,2,4,8,16,32 \
+  --duration-s 15 \
+  --json-out Performance/LoadTests/load-large-5mb.json
+```
+
+Mozesz tez odpalic tylko wybrane endpointy:
+
+```bash
+cd /home/adam/Coding/mgr2/mThesisPerformance
+DOTNET_CLI_HOME=/tmp dotnet run --project Performance/LoadTests/Performance.LoadTests.csproj -c Release -- \
+  --endpoint dotnet-rest \
+  --endpoint dotnet-grpc \
+  --endpoint dotnet-graft \
+  --endpoint python-fastapi \
+  --endpoint python-flask \
+  --endpoint python-grpc \
+  --endpoint python-graft
+```
+
+Wyniki JSON trafia do plikow podanych w `--json-out`, np.:
+
+```text
+Performance/LoadTests/load-small.json
+Performance/LoadTests/load-large-5mb.json
+```
