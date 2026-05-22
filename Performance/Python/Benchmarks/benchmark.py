@@ -4,6 +4,7 @@ import argparse
 import importlib
 import json
 from pathlib import Path
+import re
 import statistics
 import sys
 import time
@@ -49,9 +50,14 @@ def import_graft_module() -> Any:
             "graft_pypi_performance_python_graftcode_server."
             "graft.pypi.performance_python_graftcode_server.graft_config"
         )
+        service_module = importlib.import_module(
+            "graft_pypi_performance_python_graftcode_server.performanceservice"
+        )
         return SimpleNamespace(
             GraftConfig=config_module.GraftConfig,
-            PerformanceService=PythonGraftBenchmarkService,
+            PerformanceService=build_python_graft_benchmark_service(
+                service_module.PerformanceService
+            ),
         )
     except ModuleNotFoundError:
         pass
@@ -62,30 +68,35 @@ def import_graft_module() -> Any:
     )
 
 
-class PythonGraftBenchmarkService:
-    def __init__(self) -> None:
-        from graft_pypi_performance_python_graftcode_server.graft.pypi.performance_python_graftcode_server import (
-            GraftConfig,
-        )
+def build_python_graft_benchmark_service(generated_service: type[Any]) -> type[Any]:
+    class PythonGraftBenchmarkService(generated_service):
+        def __init__(self) -> None:
+            self._ensure_initialized()
+            self._instance = self._get_type_context().create_instance().execute()
 
-        GraftConfig.init()
-        self._instance = (
-            GraftConfig.rtm_ctx
-            .get_type("performance_graftcode_server.performance_service.PerformanceService")
-            .create_instance()
-            .execute()
-        )
+        def get_small(self) -> Any:
+            return self._call_graft("get_small")
 
-    def get_small(self) -> Any:
-        return self._instance.invoke_instance_method("get_small").execute().get_value()
+        def get_large(self, size_mb: int) -> Any:
+            return self._call_graft("get_large", size_mb)
 
-    def get_large(self, size_mb: int) -> Any:
-        return self._instance.invoke_instance_method("get_large", size_mb).execute().get_value()
+        def _call_graft(self, method_name: str, *args: Any) -> Any:
+            return (
+                self._instance
+                .invoke_instance_method(method_name, *args)
+                .execute()
+                .get_value()
+            )
+
+    return PythonGraftBenchmarkService
 
 
 def read_attr_or_call(obj: Any, field_name: str) -> Any:
-    snake_name = field_name[0].lower() + field_name[1:]
-    field_candidates = (field_name, snake_name, "size_bytes" if field_name == "SizeBytes" else "")
+    snake_name = to_snake_case(field_name)
+    camel_name = field_name[0].lower() + field_name[1:]
+    field_candidates = tuple(
+        dict.fromkeys((snake_name, camel_name, field_name))
+    )
     for name in field_candidates:
         if not name:
             continue
@@ -104,6 +115,10 @@ def read_attr_or_call(obj: Any, field_name: str) -> Any:
         return getattr(obj, getter)()
 
     raise AttributeError(f"Could not read field {field_name!r} from {type(obj)!r}")
+
+
+def to_snake_case(name: str) -> str:
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
 
 
 def call_method(obj: Any, *method_names: str) -> Any:
