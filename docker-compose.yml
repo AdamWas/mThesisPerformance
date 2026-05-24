@@ -23,6 +23,7 @@ services:
       DOTNET_ENVIRONMENT: Production
       PERFORMANCE_GRPC_PORT: "5101"
       PERFORMANCE_GRPC_LISTEN_ANY_IP: "true"
+      PERFORMANCE_GRPC_HTTP2_ONLY: "true"
     ports:
       - "5101:5101"
     networks:

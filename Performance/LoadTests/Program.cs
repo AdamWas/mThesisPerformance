@@ -580,7 +580,9 @@ public static class LoadRunner
                 break;
             }
             catch (RpcException exception)
-                when (cancellationToken.IsCancellationRequested && exception.StatusCode == StatusCode.Cancelled)
+                when (cancellationToken.IsCancellationRequested
+                    && (exception.StatusCode == StatusCode.Cancelled
+                        || exception.StatusCode == StatusCode.Unavailable))
             {
                 break;
             }
